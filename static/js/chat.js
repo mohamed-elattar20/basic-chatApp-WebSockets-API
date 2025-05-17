@@ -3,6 +3,20 @@ const roomName = urlParts.at(-1);
 let socket = new WebSocket(`ws://localhost:3000/chat/${roomName}`);
 const username = prompt("Enter your username.  (no spaces)");
 
+async function showNotification({ name, text }) {
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    const notification = new Notification(`New Chat message from ${name}`, {
+      body: text,
+      icon: "https://example.com/icon.png",
+    });
+    notification.onclick = () => {
+      notification.close();
+      window.focus();
+    };
+  }
+}
+
 socket.onopen = (evt) => {
   console.log("WEB SOCKET OPENED!!!");
   const data = { type: "join", name: username };
@@ -26,6 +40,9 @@ socket.onmessage = (evt) => {
       const chatItem = document.createElement("li");
       chatItem.innerHTML = `<b>${msg.name}:</b> ${msg.text}`;
       document.querySelector("#messages").appendChild(chatItem);
+      if (msg.name !== username && document.visibilityState === "hidden") {
+        showNotification(msg);
+      }
       break;
   }
 };
